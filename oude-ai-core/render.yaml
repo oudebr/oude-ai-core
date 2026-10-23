@@ -1,0 +1,30 @@
+# Blueprint da Render (chaves conferidas em https://render.com/docs/blueprint-spec em 2026-10-22).
+# Persistência: NENHUM disco é necessário. Todo o estado fica no Supabase (Postgres).
+services:
+  - type: web
+    runtime: python
+    name: oude-ai-core
+    plan: starter            # ajuste ao seu plano; o padrão da Render é 0.5c-512mb
+    region: oregon           # Render não tem região no Brasil; escolha a mais próxima do seu Supabase
+    numInstances: 1          # IMPORTANTE: 1 instância. Ver "Escala" no README (scheduler, anti-replay e limite são por processo)
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT --proxy-headers
+    healthCheckPath: /health
+    autoDeployTrigger: checksPass
+    envVars:
+      - key: ENVIRONMENT
+        value: production
+      - key: LOG_LEVEL
+        value: INFO
+      - key: RUN_SCHEDULER
+        value: "true"
+      - key: PUBLIC_BASE_URL
+        sync: false            # ex.: https://oude-ai-core.onrender.com
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: CRM_SHARED_SECRET
+        sync: false            # o MESMO valor configurado no backend do CRM (>= 32 caracteres)
+      - key: CREDENTIALS_MASTER_KEY
+        sync: false            # python -m app.core.crypto gerar-chave
